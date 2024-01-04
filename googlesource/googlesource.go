@@ -31,6 +31,11 @@ import (
 	"google.golang.org/api/option"
 )
 
+const (
+	LIMIT      = " LIMIT "
+	SelectFrom = "SELECT * FROM `"
+)
+
 // clientFactory provides function to create BigQuery Client
 type clientFactory interface {
 	Client() (*bigquery.Client, error)
@@ -300,7 +305,7 @@ func (iterator rowIter) Next(dst interface{}) error {
 }
 
 // getRowIterator sync data for bigquery using bigquery client jobs
-func (s *Source) getRowIterator(ctx context.Context, offset string, tableID string, firstSync bool) (it rowIterator, err error) {
+func (s *Source) getRowIterator(_ context.Context, offset string, tableID string, firstSync bool) (it rowIterator, err error) {
 	// check for config `IncrementColNames`. User can provide the column name which
 	// would be used as orderBy as well as incremental or offset value. Orderby is not mandatory though
 
@@ -308,11 +313,11 @@ func (s *Source) getRowIterator(ctx context.Context, offset string, tableID stri
 	if len(s.sourceConfig.Config.IncrementColName) > 0 {
 		columnName := s.sourceConfig.Config.IncrementColName
 		if firstSync {
-			query = "SELECT * FROM `" + s.sourceConfig.Config.ProjectID + "." + s.sourceConfig.Config.DatasetID + "." + tableID + "` " +
-				" ORDER BY " + columnName + " LIMIT " + strconv.Itoa(config.CounterLimit)
+			query = SelectFrom + s.sourceConfig.Config.ProjectID + "." + s.sourceConfig.Config.DatasetID + "." + tableID + "` " +
+				" ORDER BY " + columnName + LIMIT + strconv.Itoa(config.CounterLimit)
 		} else {
-			query = "SELECT * FROM `" + s.sourceConfig.Config.ProjectID + "." + s.sourceConfig.Config.DatasetID + "." + tableID + "` WHERE " + columnName +
-				" > " + offset + " ORDER BY " + columnName + " LIMIT " + strconv.Itoa(config.CounterLimit)
+			query = SelectFrom + s.sourceConfig.Config.ProjectID + "." + s.sourceConfig.Config.DatasetID + "." + tableID + "` WHERE " + columnName +
+				" > " + offset + " ORDER BY " + columnName + LIMIT + strconv.Itoa(config.CounterLimit)
 		}
 	} else {
 		// add default value if none specified
@@ -320,8 +325,8 @@ func (s *Source) getRowIterator(ctx context.Context, offset string, tableID stri
 			offset = "0"
 		}
 		// if no incremental value provided using default offset which is created by incrementing a counter each time a row is sync.
-		query = "SELECT * FROM `" + s.sourceConfig.Config.ProjectID + "." + s.sourceConfig.Config.DatasetID + "." + tableID + "` " +
-			" LIMIT " + strconv.Itoa(config.CounterLimit) + " OFFSET " + offset
+		query = SelectFrom + s.sourceConfig.Config.ProjectID + "." + s.sourceConfig.Config.DatasetID + "." + tableID + "` " +
+			LIMIT + strconv.Itoa(config.CounterLimit) + " OFFSET " + offset
 	}
 
 	return s.bqReadClient.Query(s, query)
