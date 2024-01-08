@@ -172,7 +172,7 @@ func TestInvalidCreds(t *testing.T) {
 	}
 }
 
-func TestNewSource(t *testing.T) {
+func TestNewSource(_ *testing.T) {
 	NewSource()
 }
 
@@ -285,7 +285,7 @@ func TestInvalidOrderByName(t *testing.T) {
 type mockBQClientStruct struct {
 }
 
-func (bq mockBQClientStruct) Query(s *Source, query string) (it rowIterator, err error) {
+func (bq mockBQClientStruct) Query(_ *Source, _ string) (it rowIterator, err error) {
 	return nil, fmt.Errorf("mock error")
 }
 

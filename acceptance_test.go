@@ -151,7 +151,7 @@ func createDataSetForAcceptance(t *testing.T) (client *bigquery.Client, err erro
 	return client, err
 }
 
-func createTableForAcceptance(t *testing.T, client *bigquery.Client, tableID string) (err error) {
+func createTableForAcceptance(_ *testing.T, client *bigquery.Client, tableID string) (err error) {
 	ctx := context.Background()
 
 	sampleSchema := bigquery.Schema{
@@ -240,7 +240,7 @@ func dataSetupWithRecord(t *testing.T, cfg map[string]string, record []sdk.Recor
 	return result, nil
 }
 
-func cleantUpTableForAcceptance(t *testing.T, client *bigquery.Client, tables []string) (err error) {
+func cleantUpTableForAcceptance(_ *testing.T, client *bigquery.Client, tables []string) (err error) {
 	ctx := context.Background()
 
 	for _, tableID := range tables {
