@@ -15,10 +15,10 @@
 package main
 
 import (
-	googlebigquery "github.com/conduitio-labs/conduit-connector-bigquery"
+	bigquery "github.com/conduitio-labs/conduit-connector-bigquery"
 	sdk "github.com/conduitio/conduit-connector-sdk"
 )
 
 func main() {
-	sdk.Serve(googlebigquery.Connector)
+	sdk.Serve(bigquery.Connector)
 }
