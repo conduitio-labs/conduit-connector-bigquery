@@ -102,7 +102,7 @@ func TestAcceptance(t *testing.T) {
 	)
 }
 
-// AcceptanceTestDriver implements sdk.AcceptanceTestDriver
+// AcceptanceTestDriver implements sdk.AcceptanceTestDriver.
 type AcceptanceTestDriver struct {
 	sdk.ConfigurableAcceptanceTestDriver
 }
@@ -115,7 +115,7 @@ func (d AcceptanceTestDriver) GenerateRecord(t *testing.T, op sdk.Operation) sdk
 	return record
 }
 
-// WriteToSource writes data for source to pull data from
+// WriteToSource writes data for source to pull data from.
 func (d AcceptanceTestDriver) WriteToSource(t *testing.T, records []sdk.Record) []sdk.Record {
 	var err error
 	is := is.New(t)
@@ -136,7 +136,7 @@ func createDataSetForAcceptance(t *testing.T) (client *bigquery.Client, err erro
 
 	client, err = bigquery.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(serviceAccount)))
 	if err != nil {
-		return client, fmt.Errorf("bigquery.NewClient: %v", err)
+		return client, fmt.Errorf("bigquery.NewClient: %w", err)
 	}
 
 	meta := &bigquery.DatasetMetadata{
@@ -178,7 +178,7 @@ func dataSetupWithRecord(t *testing.T, cfg map[string]string, record []sdk.Recor
 
 	client, err := bigquery.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(serviceAccount)))
 	if err != nil {
-		return result, fmt.Errorf("bigquery.NewClient: %v", err)
+		return result, fmt.Errorf("bigquery.NewClient: %w", err)
 	}
 	defer client.Close()
 

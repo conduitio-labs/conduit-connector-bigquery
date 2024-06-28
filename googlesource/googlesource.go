@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -33,26 +34,25 @@ import (
 
 const (
 	LIMIT      = " LIMIT "
-	SelectFrom = "SELECT * FROM `"
+	SelectFrom = "SELECT * FROM "
 )
 
-// clientFactory provides function to create BigQuery Client
+// clientFactory provides function to create BigQuery Client.
 type clientFactory interface {
-	Client() (*bigquery.Client, error)
+	Client(ctx context.Context) (*bigquery.Client, error)
 }
 
 type client struct {
-	ctx       context.Context
 	projectID string
 	opts      []option.ClientOption
 }
 
-func (client *client) Client() (*bigquery.Client, error) {
-	return bigquery.NewClient(client.ctx, client.projectID, client.opts...)
+func (client *client) Client(ctx context.Context) (*bigquery.Client, error) {
+	return bigquery.NewClient(ctx, client.projectID, client.opts...)
 }
 
 type bqClient interface {
-	Query(s *Source, query string) (it rowIterator, err error)
+	Query(ctx context.Context, s *Source, query string) (it rowIterator, err error)
 	Close() error
 }
 
@@ -60,10 +60,9 @@ type bqClientStruct struct {
 	client *bigquery.Client
 }
 
-func (bq bqClientStruct) Query(s *Source, query string) (it rowIterator, err error) {
-	ctx := s.ctx
+func (bq bqClientStruct) Query(ctx context.Context, s *Source, query string) (it rowIterator, err error) {
 	q := bq.client.Query(query)
-	sdk.Logger(ctx).Trace().Str("q ", q.Q)
+	sdk.Logger(ctx).Trace().Str("q", q.Q).Send()
 	q.Location = s.sourceConfig.Config.Location
 
 	job, err := q.Run(ctx)
@@ -96,7 +95,7 @@ func (bq bqClientStruct) Close() error {
 	return bq.client.Close()
 }
 
-// checkInitialPos helps in creating the query to fetch data from endpoint
+// checkInitialPos helps in creating the query to fetch data from endpoint.
 func (s *Source) checkInitialPos() (firstSync, userDefinedOffset, userDefinedKey bool) {
 	// if its the firstSync no offset is applied
 	if s.getPosition() == "" {
@@ -122,7 +121,9 @@ func (s *Source) getPosition() string {
 	return s.position.positions
 }
 
-// ReadGoogleRow fetches data from endpoint. It creates sdk.record and puts it in response channel
+// ReadGoogleRow fetches data from endpoint. It creates sdk.record and puts it in response channel.
+//
+//nolint:funlen,gocognit // needs to be refactored
 func (s *Source) ReadGoogleRow(ctx context.Context) (err error) {
 	sdk.Logger(ctx).Trace().Msg("Inside read google row")
 	var userDefinedOffset, userDefinedKey, firstSync bool
@@ -155,7 +156,7 @@ func (s *Source) ReadGoogleRow(ctx context.Context) (err error) {
 			err := it.Next(&row)
 			schema := it.Schema()
 
-			if err == iterator.Done {
+			if errors.Is(err, iterator.Done) {
 				sdk.Logger(ctx).Trace().Str("counter", fmt.Sprintf("%d", counter)).Msg("iterator is done.")
 				if counter < config.CounterLimit {
 					// if counter is smaller than the limit we have reached the end of
@@ -230,17 +231,17 @@ func (s *Source) ReadGoogleRow(ctx context.Context) (err error) {
 
 			// select statement to make sure channel was not closed by teardown stage
 			if s.iteratorClosed {
-				sdk.Logger(ctx).Trace().Msg("recieved closed channel")
+				sdk.Logger(ctx).Trace().Msg("received closed channel")
 				return nil
 			}
 			s.records <- record
 		}
 	}
-	return
+	return nil
 }
 
 // matchColumnName matches if the column name is equal to the user defined primary key column.
-// if it is so assign this column name data to key for the record
+// if it is so assign this column name data to key for the record.
 func matchColumnName(dataName, columnName string, data sdk.StructuredData) (key string) {
 	if dataName == columnName {
 		key = fmt.Sprintf("%v", data[dataName])
@@ -263,7 +264,7 @@ func calcOffset(firstSync bool, offset string) (string, error) {
 }
 
 func getType(fieldType bigquery.FieldType, offset string) string {
-	switch fieldType {
+	switch fieldType { //nolint:exhaustive // we are not interested in all types
 	case bigquery.IntegerFieldType:
 		return offset
 	case bigquery.FloatFieldType:
@@ -272,15 +273,13 @@ func getType(fieldType bigquery.FieldType, offset string) string {
 		return offset
 	case bigquery.BigNumericFieldType:
 		return offset
-	case bigquery.TimeFieldType:
-		return fmt.Sprintf("'%s'", offset)
 
 	default:
 		return fmt.Sprintf("'%s'", offset)
 	}
 }
 
-// writePosition prevents race condition happening while using map inside goroutine
+// writePosition prevents race condition happening while using map inside goroutine.
 func (s *Source) writePosition(offset string) (recPosition []byte, err error) {
 	s.position.lock.Lock()
 	defer s.position.lock.Unlock()
@@ -304,8 +303,8 @@ func (iterator rowIter) Next(dst interface{}) error {
 	return iterator.it.Next(dst)
 }
 
-// getRowIterator sync data for bigquery using bigquery client jobs
-func (s *Source) getRowIterator(_ context.Context, offset string, tableID string, firstSync bool) (it rowIterator, err error) {
+// getRowIterator sync data for bigquery using bigquery client jobs.
+func (s *Source) getRowIterator(ctx context.Context, offset string, tableID string, firstSync bool) (it rowIterator, err error) {
 	// check for config `IncrementColNames`. User can provide the column name which
 	// would be used as orderBy as well as incremental or offset value. Orderby is not mandatory though
 
@@ -329,7 +328,7 @@ func (s *Source) getRowIterator(_ context.Context, offset string, tableID string
 			LIMIT + strconv.Itoa(config.CounterLimit) + " OFFSET " + offset
 	}
 
-	return s.bqReadClient.Query(s, query)
+	return s.bqReadClient.Query(ctx, s, query)
 }
 
 // Next returns the next record from the buffer.
@@ -346,8 +345,8 @@ func (s *Source) Next(ctx context.Context) (sdk.Record, error) {
 	}
 }
 
-// fetchPos unmarshal position
-func fetchPos(s *Source, pos sdk.Position) {
+// fetchPos unmarshal position.
+func fetchPos(ctx context.Context, s *Source, pos sdk.Position) {
 	s.position.lock = new(sync.Mutex)
 	s.position.lock.Lock()
 	defer s.position.lock.Unlock()
@@ -355,13 +354,12 @@ func fetchPos(s *Source, pos sdk.Position) {
 
 	err := json.Unmarshal(pos, &s.position.positions)
 	if err != nil {
-		sdk.Logger(s.ctx).Info().Msg("Could not get position. Will start with offset 0")
+		sdk.Logger(ctx).Info().Msg("Could not get position. Will start with offset 0")
 	}
 }
 
-func (s *Source) runIterator() (err error) {
+func (s *Source) runIterator(ctx context.Context) (err error) {
 	// Snapshot sync. Start were we left last
-	ctx := s.ctx
 	err = s.ReadGoogleRow(ctx)
 	if err != nil {
 		sdk.Logger(ctx).Trace().Str("err", err.Error()).Msg("error found while reading google row.")
