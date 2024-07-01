@@ -196,10 +196,9 @@ func TestNextContextDone(t *testing.T) {
 	}
 }
 
-type mockClient struct {
-}
+type mockClient struct{}
 
-func (client *mockClient) Client() (*bigquery.Client, error) {
+func (client *mockClient) Client(context.Context) (*bigquery.Client, error) {
 	return nil, fmt.Errorf("mock error")
 }
 
@@ -238,7 +237,7 @@ func TestInvalid(t *testing.T) {
 	time.Sleep(15 * time.Second)
 	_, err = src.Read(ctx)
 	if err == nil {
-		t.Errorf("should have recieved error while pulling data")
+		t.Errorf("should have received error while pulling data")
 	}
 
 	err = src.Teardown(ctx)
@@ -282,10 +281,9 @@ func TestInvalidOrderByName(t *testing.T) {
 	}
 }
 
-type mockBQClientStruct struct {
-}
+type mockBQClientStruct struct{}
 
-func (bq mockBQClientStruct) Query(_ *Source, _ string) (it rowIterator, err error) {
+func (bq mockBQClientStruct) Query(_ context.Context, _ *Source, _ string) (it rowIterator, err error) {
 	return nil, fmt.Errorf("mock error")
 }
 
@@ -315,7 +313,6 @@ func TestInvalidCloseBQ(t *testing.T) {
 		t.Errorf("expected no error, got %v", err)
 	}
 	src.bqReadClient = mockBQClientStruct{}
-	src.ctx = ctx
 
 	err = src.Teardown(ctx)
 	if err == nil {

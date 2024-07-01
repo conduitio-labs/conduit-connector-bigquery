@@ -22,32 +22,32 @@ import (
 )
 
 const (
-	// KeyProjectID is the config projectID
+	// KeyProjectID is the config projectID.
 	KeyProjectID = "projectID"
 
-	// KeyDatasetID is the dataset ID
+	// KeyDatasetID is the dataset ID.
 	KeyDatasetID = "datasetID"
 
-	// KeyTableID is the tableID
+	// KeyTableID is the tableID.
 	KeyTableID = "tableID"
 
-	// KeyServiceAccount path to service account key
+	// KeyServiceAccount path to service account key.
 	KeyServiceAccount = "serviceAccount"
 
-	// KeyLocation location of the dataset
+	// KeyLocation location of the dataset.
 	KeyLocation = "datasetLocation"
 
-	// KeyPollingTime time after which polling should be done
+	// KeyPollingTime time after which polling should be done.
 	KeyPollingTime = "pollingTime"
 
-	// ConfigOrderBy lets user decide
+	// ConfigOrderBy lets user decide.
 	KeyIncrementalColName = "incrementingColumnName"
 
-	// KeyPrimaryKeyColName provide primary key
+	// KeyPrimaryKeyColName provide primary key.
 	KeyPrimaryKeyColName = "primaryKeyColName"
 )
 
-// Config represents configuration needed for S3
+// Config represents configuration needed for S3.
 type Config struct {
 	ProjectID         string
 	DatasetID         string
@@ -60,13 +60,13 @@ type Config struct {
 }
 
 var (
-	// CounterLimit sets limit of how many rows will be fetched in each job
+	// CounterLimit sets limit of how many rows will be fetched in each job.
 	CounterLimit = 500
 	PollingTime  = time.Minute * 5
 	TimeoutTime  = time.Second * 120
 )
 
-// SourceConfig is config for source
+// SourceConfig is config for source.
 type SourceConfig struct {
 	Config Config
 }
@@ -110,7 +110,8 @@ func ParseSourceConfig(cfg map[string]string) (SourceConfig, error) {
 		Location:          cfg[KeyLocation],
 		PollingTime:       cfg[KeyPollingTime],
 		IncrementColName:  cfg[KeyIncrementalColName],
-		PrimaryKeyColName: cfg[KeyPrimaryKeyColName]}
+		PrimaryKeyColName: cfg[KeyPrimaryKeyColName],
+	}
 
 	return SourceConfig{
 		Config: config,

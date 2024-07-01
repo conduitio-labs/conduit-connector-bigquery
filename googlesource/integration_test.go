@@ -17,6 +17,7 @@ package googlesource
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -48,7 +49,7 @@ func dataSetup(t *testing.T) (err error) {
 
 	client, err := bigquery.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(serviceAccount)))
 	if err != nil {
-		return fmt.Errorf("bigquery.NewClient: %v", err)
+		return fmt.Errorf("bigquery.NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -62,7 +63,7 @@ func dataSetup(t *testing.T) (err error) {
 	}
 	client, err = bigquery.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(serviceAccount)))
 	if err != nil {
-		return fmt.Errorf("bigquery.NewClient: %v", err)
+		return fmt.Errorf("bigquery.NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -85,7 +86,7 @@ func dataSetup(t *testing.T) (err error) {
 	}
 
 	if status.Err() != nil && !strings.Contains(status.Err().Error(), "duplicate") {
-		return fmt.Errorf("job completed with error: %v", status.Err())
+		return fmt.Errorf("job completed with error: %w", status.Err())
 	}
 
 	t.Log("Table created:", tableID)
@@ -110,7 +111,7 @@ func dataSetupWithTimestamp(t *testing.T) (err error) {
 
 	client, err := bigquery.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(serviceAccount)))
 	if err != nil {
-		return fmt.Errorf("bigquery.NewClient: %v", err)
+		return fmt.Errorf("bigquery.NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -120,7 +121,7 @@ func dataSetupWithTimestamp(t *testing.T) (err error) {
 
 	// create dataset
 	if err := client.Dataset(datasetID).Create(ctx, meta); err != nil && !strings.Contains(err.Error(), "duplicate") {
-		t.Log("Dataset could not be created created")
+		t.Log("Dataset could not be created")
 		return err
 	}
 
@@ -217,7 +218,7 @@ func cleanupDataset(t *testing.T, tables []string) (err error) {
 	ctx := context.Background()
 	client, err := bigquery.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(serviceAccount)))
 	if err != nil {
-		return fmt.Errorf("bigquery.NewClient: %v", err)
+		return fmt.Errorf("bigquery.NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -231,7 +232,7 @@ func cleanupDataset(t *testing.T, tables []string) (err error) {
 
 	client, err = bigquery.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(serviceAccount)))
 	if err != nil {
-		return fmt.Errorf("bigquery.NewClient: %v", err)
+		return fmt.Errorf("bigquery.NewClient: %w", err)
 	}
 
 	if err = client.Dataset(datasetID).Delete(ctx); err != nil {
@@ -285,7 +286,7 @@ func TestSuccessTimeIncremental(t *testing.T) {
 	time.Sleep(5 * time.Second)
 	for {
 		_, err := src.Read(ctx)
-		if err != nil && err == sdk.ErrBackoffRetry {
+		if errors.Is(err, sdk.ErrBackoffRetry) {
 			t.Log("Error: ", err)
 			break
 		}
@@ -346,7 +347,7 @@ func TestSuccessTimeIncrementalAndUpdate(t *testing.T) {
 	time.Sleep(15 * time.Second)
 	for {
 		_, err := src.Read(ctx)
-		if err != nil && err == sdk.ErrBackoffRetry {
+		if errors.Is(err, sdk.ErrBackoffRetry) {
 			t.Log(err)
 			break
 		}
@@ -365,7 +366,7 @@ func TestSuccessTimeIncrementalAndUpdate(t *testing.T) {
 	time.Sleep(5 * time.Second)
 	for {
 		_, err = src.Read(ctx)
-		if err != nil && err == sdk.ErrBackoffRetry {
+		if errors.Is(err, sdk.ErrBackoffRetry) {
 			t.Log(err)
 			break
 		}
@@ -420,7 +421,7 @@ func TestSuccessPrimaryKey(t *testing.T) {
 	time.Sleep(5 * time.Second)
 	for {
 		_, err = src.Read(ctx)
-		if err != nil && err == sdk.ErrBackoffRetry {
+		if errors.Is(err, sdk.ErrBackoffRetry) {
 			t.Log(err)
 			break
 		}
@@ -481,7 +482,7 @@ func TestSuccessfulGetFromPosition(t *testing.T) {
 	time.Sleep(15 * time.Second)
 	for i := 0; i <= 4; i++ {
 		_, err := src.Read(ctx)
-		if err != nil && err == sdk.ErrBackoffRetry {
+		if errors.Is(err, sdk.ErrBackoffRetry) {
 			t.Log(err)
 			break
 		}
@@ -521,7 +522,8 @@ func TestSuccessfulGetWholeDataset(t *testing.T) {
 		config.KeyTableID:            tableID, // tableID,
 		config.KeyLocation:           location,
 		config.KeyIncrementalColName: "post_abbr",
-		config.KeyPrimaryKeyColName:  "post_abbr"}
+		config.KeyPrimaryKeyColName:  "post_abbr",
+	}
 
 	ctx := context.Background()
 	err = src.Configure(ctx, cfg)
@@ -541,7 +543,7 @@ func TestSuccessfulGetWholeDataset(t *testing.T) {
 
 	for {
 		_, err := src.Read(ctx)
-		if err != nil && err == sdk.ErrBackoffRetry {
+		if errors.Is(err, sdk.ErrBackoffRetry) {
 			break
 		}
 		if err != nil {
@@ -601,7 +603,7 @@ func TestSuccessfulOrderByName(t *testing.T) {
 
 	for {
 		_, err := src.Read(ctx)
-		if err != nil && err == sdk.ErrBackoffRetry {
+		if errors.Is(err, sdk.ErrBackoffRetry) {
 			break
 		}
 		if err != nil {

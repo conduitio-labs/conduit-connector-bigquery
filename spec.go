@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package googlebigquery
+package bigquery
 
 import (
 	sdk "github.com/conduitio/conduit-connector-sdk"
@@ -27,8 +27,8 @@ var version = "v0.0.0-dev"
 func Specification() sdk.Specification {
 	return sdk.Specification{
 		Name:        "bigquery",
-		Summary:     "A BigQuery source plugin for Conduit, written in Go.",
-		Description: "A plugin to fetch data from google BigQuery",
+		Summary:     "A BigQuery source plugin for Conduit",
+		Description: "A plugin to fetch data from Google BigQuery",
 		Version:     version,
 		Author:      "Neha Gupta",
 	}

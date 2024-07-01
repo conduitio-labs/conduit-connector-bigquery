@@ -29,11 +29,8 @@ import (
 
 type Source struct {
 	sdk.UnimplementedSource
-	bqReadClient bqClient
-	sourceConfig config.SourceConfig
-	// for all the function running in goroutine we needed the ctx value. To provide the current
-	// ctx value ctx was required in struct.
-	ctx            context.Context
+	bqReadClient   bqClient
+	sourceConfig   config.SourceConfig
 	records        chan sdk.Record
 	position       position
 	ticker         *time.Ticker
@@ -114,7 +111,6 @@ func (s *Source) Configure(ctx context.Context, cfg map[string]string) error {
 
 	s.sourceConfig = sourceConfig
 	s.clientType = &client{
-		ctx:       ctx,
 		projectID: s.sourceConfig.Config.ProjectID,
 		opts: []option.ClientOption{
 			option.WithCredentialsJSON([]byte(s.sourceConfig.Config.ServiceAccount)),
@@ -124,8 +120,7 @@ func (s *Source) Configure(ctx context.Context, cfg map[string]string) error {
 }
 
 func (s *Source) Open(ctx context.Context, pos sdk.Position) (err error) {
-	s.ctx = ctx
-	fetchPos(s, pos)
+	fetchPos(ctx, s, pos)
 
 	pollingTime := config.PollingTime
 
@@ -144,7 +139,7 @@ func (s *Source) Open(ctx context.Context, pos sdk.Position) (err error) {
 
 	s.ticker = time.NewTicker(pollingTime)
 	s.tomb = &tomb.Tomb{}
-	client, err := s.clientType.Client()
+	client, err := s.clientType.Client(ctx)
 	if err != nil {
 		sdk.Logger(ctx).Error().Str("err", err.Error()).Msg("error found while creating connection. ")
 		clientErr := fmt.Errorf("error while creating bigquery client: %s", err.Error())
@@ -153,7 +148,9 @@ func (s *Source) Open(ctx context.Context, pos sdk.Position) (err error) {
 	bqClient := bqClientStruct{client: client}
 	s.bqReadClient = bqClient
 
-	s.tomb.Go(s.runIterator)
+	s.tomb.Go(func() error {
+		return s.runIterator(ctx)
+	})
 	sdk.Logger(ctx).Trace().Msg("end of function: open")
 	return nil
 }
@@ -162,7 +159,7 @@ func (s *Source) Read(ctx context.Context) (sdk.Record, error) {
 	sdk.Logger(ctx).Trace().Msg("Stated read function")
 	var response sdk.Record
 
-	response, err := s.Next(s.ctx)
+	response, err := s.Next(ctx)
 	if err != nil {
 		sdk.Logger(ctx).Trace().Str("err", err.Error()).Msg("Error from endpoint.")
 		return sdk.Record{}, err
@@ -175,26 +172,26 @@ func (s *Source) Ack(ctx context.Context, position sdk.Position) error {
 	return nil
 }
 
-func (s *Source) Teardown(_ context.Context) error {
+func (s *Source) Teardown(ctx context.Context) error {
 	s.iteratorClosed = true
 
 	if s.records != nil {
 		close(s.records)
 	}
-	err := s.StopIterator()
+	err := s.StopIterator(ctx)
 	if err != nil {
-		sdk.Logger(s.ctx).Error().Str("err", err.Error()).Msg("got error while closing BigQuery client")
+		sdk.Logger(ctx).Error().Str("err", err.Error()).Msg("got error while closing BigQuery client")
 		return err
 	}
 	return nil
 }
 
-func (s *Source) StopIterator() error {
+func (s *Source) StopIterator(ctx context.Context) error {
 	s.iteratorClosed = true
 	if s.bqReadClient != nil {
 		err := s.bqReadClient.Close()
 		if err != nil {
-			sdk.Logger(s.ctx).Error().Str("err", err.Error()).Msg("got error while closing BigQuery client")
+			sdk.Logger(ctx).Error().Str("err", err.Error()).Msg("got error while closing BigQuery client")
 			return err
 		}
 	}

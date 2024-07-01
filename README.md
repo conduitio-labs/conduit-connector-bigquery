@@ -1,10 +1,13 @@
 ### Conduit Connector for BigQuery
-[Conduit](https://conduit.io) for BigQuery.
+
+[Conduit](https://conduit.io) connector for BigQuery.
 
 #### Source
+
 A source connector pulls data from BigQuery and pushes it to downstream resources via Conduit.
 
 ### Implementation
+
 The connector pulls data from BigQuery for a dataset or selected tables of users choice. The connector syncs incrementally this means
 it keeps on looking for new insertion/updation happening every time interval user specified in any of the table the data is pulled for and syncs it. 
 If the Conduit stops or pauses midway the connector will make sure to pull the data which was not pull earlier. 
@@ -15,9 +18,11 @@ for eg,
 - On resuming the pipeline - Connector sync data from table B index 6 and would not sync table A's already synced rows.
 
 ### How to build?
+
 Run `make build` to build the connector.
 
 ### Configuration
+
 | name |  description | required | default value |
 |------|--------------|----------|---------------|
 |`serviceAccount`| service account with access to project. ref: https://cloud.google.com/docs/authentication/getting-started|true| - |
@@ -30,6 +35,7 @@ Run `make build` to build the connector.
 |`primaryKeyColName`|Specify the primary key column name. eg, `ID` of type int or float or any primary key. User need to provide column name for each table in a format - 'columnName' without any spaces Eg: 'created_by' where created_by is column name. |true| - |
 
 ### How to configure
+
 Create a connector using - `POST /v1/connectors` API
 
 Sample payload-
@@ -55,17 +61,21 @@ Sample payload-
 ```
 
 ### Testing
+
 Run `make test` to run all the unit tests. To run the test cases export environment variable - `GOOGLE_SERVICE_ACCOUNT` and `GOOGLE_PROJECT_ID` where,
 - `GOOGLE_SERVICE_ACCOUNT` is the value in google service account file.  refer: https://cloud.google.com/docs/authentication/getting-started to create a service account
 - `GOOGLE_PROJECT_ID` is  the ID of projects whose tables data is to be synced
 
 ### Known Issues & Limitations
+
 * Current implementation handles snapshot and incremental data.
 * The connector is able to send record's `Key` as `sdk.RawData` only.
 
 ### Planned work
+
 - [ ] Handle Delete data
 
 ### Specification
+
 The `spec.go` file provides a programmatic representation of the configuration options. This is used by the Conduit
 server to validate configuration and dynamically display configuration options to end users.
