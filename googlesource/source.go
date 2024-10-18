@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/conduitio-labs/conduit-connector-bigquery/config"
+	"github.com/conduitio/conduit-commons/opencdc"
 	sdk "github.com/conduitio/conduit-connector-sdk"
 	"google.golang.org/api/option"
 	"gopkg.in/tomb.v2"
@@ -31,7 +32,7 @@ type Source struct {
 	sdk.UnimplementedSource
 	bqReadClient   bqClient
 	sourceConfig   config.SourceConfig
-	records        chan sdk.Record
+	records        chan opencdc.Record
 	position       position
 	ticker         *time.Ticker
 	tomb           *tomb.Tomb
@@ -52,8 +53,8 @@ func NewSource() sdk.Source {
 }
 
 // Parameters is a map of named Parameters that describe how to configure the Source.
-func (s *Source) Parameters() map[string]sdk.Parameter {
-	return map[string]sdk.Parameter{
+func (s *Source) Parameters() config.Parameters {
+	return map[string]config.Parameter{
 		config.KeyServiceAccount: {
 			Default:     "",
 			Required:    true,
@@ -101,7 +102,7 @@ func (s *Source) Parameters() map[string]sdk.Parameter {
 	}
 }
 
-func (s *Source) Configure(ctx context.Context, cfg map[string]string) error {
+func (s *Source) Configure(ctx context.Context, cfg config.Config) error {
 	sdk.Logger(ctx).Trace().Msg("Configuring a Source Connector.")
 	sourceConfig, err := config.ParseSourceConfig(cfg)
 	if err != nil {
@@ -119,14 +120,14 @@ func (s *Source) Configure(ctx context.Context, cfg map[string]string) error {
 	return nil
 }
 
-func (s *Source) Open(ctx context.Context, pos sdk.Position) (err error) {
+func (s *Source) Open(ctx context.Context, pos opencdc.Position) (err error) {
 	fetchPos(ctx, s, pos)
 
 	pollingTime := config.PollingTime
 
 	// s.records is a buffered channel that contains records
 	//  coming from all the tables which user wants to sync.
-	s.records = make(chan sdk.Record, 100)
+	s.records = make(chan opencdc.Record, 100)
 	s.iteratorClosed = false
 
 	if len(s.sourceConfig.Config.PollingTime) > 0 {
@@ -155,19 +156,19 @@ func (s *Source) Open(ctx context.Context, pos sdk.Position) (err error) {
 	return nil
 }
 
-func (s *Source) Read(ctx context.Context) (sdk.Record, error) {
+func (s *Source) Read(ctx context.Context) (opencdc.Record, error) {
 	sdk.Logger(ctx).Trace().Msg("Stated read function")
-	var response sdk.Record
+	var response opencdc.Record
 
 	response, err := s.Next(ctx)
 	if err != nil {
 		sdk.Logger(ctx).Trace().Str("err", err.Error()).Msg("Error from endpoint.")
-		return sdk.Record{}, err
+		return opencdc.Record{}, err
 	}
 	return response, nil
 }
 
-func (s *Source) Ack(ctx context.Context, position sdk.Position) error {
+func (s *Source) Ack(ctx context.Context, position opencdc.Position) error {
 	sdk.Logger(ctx).Debug().Str("position", string(position)).Msg("got ack")
 	return nil
 }
