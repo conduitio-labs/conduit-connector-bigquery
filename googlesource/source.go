@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/conduitio-labs/conduit-connector-bigquery/config"
+	cconfig "github.com/conduitio/conduit-commons/config"
 	"github.com/conduitio/conduit-commons/opencdc"
 	sdk "github.com/conduitio/conduit-connector-sdk"
 	"google.golang.org/api/option"
@@ -53,48 +54,45 @@ func NewSource() sdk.Source {
 }
 
 // Parameters is a map of named Parameters that describe how to configure the Source.
-func (s *Source) Parameters() config.Parameters {
-	return map[string]config.Parameter{
+func (s *Source) Parameters() cconfig.Parameters {
+	return map[string]cconfig.Parameter{
 		config.KeyServiceAccount: {
 			Default:     "",
-			Required:    true,
 			Description: "service account key file with data pulling access. ref: https://cloud.google.com/docs/authentication/getting-started", // We can also take it as value if required
+			Validations: []cconfig.Validation{cconfig.ValidationRequired{}},
 		},
 		config.KeyProjectID: {
 			Default:     "",
-			Required:    true,
 			Description: "Google project ID.",
+			Validations: []cconfig.Validation{cconfig.ValidationRequired{}},
 		},
 		config.KeyDatasetID: {
 			Default:     "",
-			Required:    true,
 			Description: "Google Bigqueries dataset ID.",
+			Validations: []cconfig.Validation{cconfig.ValidationRequired{}},
 		},
 		config.KeyLocation: {
 			Default:     "",
-			Required:    true,
 			Description: "Google Bigqueries dataset location.",
+			Validations: []cconfig.Validation{cconfig.ValidationRequired{}},
 		},
 		config.KeyTableID: {
 			Default:     "",
-			Required:    true,
 			Description: "Google Bigqueries table ID.",
+			Validations: []cconfig.Validation{cconfig.ValidationRequired{}},
 		},
 		config.KeyPollingTime: {
 			Default:     "5",
-			Required:    false,
 			Description: "polling period for the CDC mode, formatted as a time.Duration string.",
 		},
 		config.KeyIncrementalColName: {
-			Default:  "",
-			Required: false,
+			Default: "",
 			Description: `Column name which provides visibility about newer rows. For eg, updated_at column which stores when the row was last updated\n
 			primary key with incremental value say id of type int or float.  \n eg value,
 			 updated_at`,
 		},
 		config.KeyPrimaryKeyColName: {
-			Default:  "",
-			Required: false,
+			Default: "",
 			Description: `Column name which provides visibility about uniqueness. For eg, _id which stores \n
 			primary key with incremental value say id of type int or float.  \n eg value,
 			 id`,
@@ -102,7 +100,7 @@ func (s *Source) Parameters() config.Parameters {
 	}
 }
 
-func (s *Source) Configure(ctx context.Context, cfg config.Config) error {
+func (s *Source) Configure(ctx context.Context, cfg cconfig.Config) error {
 	sdk.Logger(ctx).Trace().Msg("Configuring a Source Connector.")
 	sourceConfig, err := config.ParseSourceConfig(cfg)
 	if err != nil {
