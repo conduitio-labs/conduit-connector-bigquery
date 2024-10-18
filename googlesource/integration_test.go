@@ -26,6 +26,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/conduitio-labs/conduit-connector-bigquery/config"
+	"github.com/conduitio/conduit-commons/opencdc"
 	sdk "github.com/conduitio/conduit-connector-sdk"
 	"google.golang.org/api/option"
 )
@@ -277,7 +278,7 @@ func TestSuccessTimeIncremental(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
-	pos := sdk.Position{}
+	pos := opencdc.Position{}
 
 	err = src.Open(ctx, pos)
 	if err != nil {
@@ -335,7 +336,7 @@ func TestSuccessTimeIncrementalAndUpdate(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
-	pos := sdk.Position{}
+	pos := opencdc.Position{}
 
 	err = src.Open(ctx, pos)
 	if err != nil {
@@ -412,7 +413,7 @@ func TestSuccessPrimaryKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pos := sdk.Position{}
+	pos := opencdc.Position{}
 
 	err = src.Open(ctx, pos)
 	if err != nil {
@@ -533,7 +534,7 @@ func TestSuccessfulGetWholeDataset(t *testing.T) {
 	}
 
 	config.PollingTime = time.Second * 1
-	pos := sdk.Position{}
+	pos := opencdc.Position{}
 	err = src.Open(ctx, pos)
 	if err != nil {
 		t.Log("errror: ", err)
@@ -593,7 +594,7 @@ func TestSuccessfulOrderByName(t *testing.T) {
 	}
 
 	config.PollingTime = time.Second * 1
-	pos := sdk.Position{}
+	pos := opencdc.Position{}
 	err = src.Open(ctx, pos)
 	if err != nil {
 		t.Log("errror: ", err)

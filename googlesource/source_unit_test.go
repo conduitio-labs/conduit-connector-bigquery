@@ -24,7 +24,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/conduitio-labs/conduit-connector-bigquery/config"
-	sdk "github.com/conduitio/conduit-connector-sdk"
+	"github.com/conduitio/conduit-commons/opencdc"
 	"gopkg.in/tomb.v2"
 )
 
@@ -74,7 +74,7 @@ func TestSuccessfulTearDown(t *testing.T) {
 		t.Errorf("expected no error, got %v", err)
 	}
 
-	pos := sdk.Position{}
+	pos := opencdc.Position{}
 	err = src.Open(ctx, pos)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -120,7 +120,7 @@ func TestMultipleTables(t *testing.T) {
 		t.Errorf("error found: %v", err)
 	}
 
-	pos := sdk.Position{}
+	pos := opencdc.Position{}
 	err = src.Open(ctx, pos)
 	if err != nil {
 		t.Errorf("error found: %v", err)
@@ -149,7 +149,7 @@ func TestInvalidCreds(t *testing.T) {
 		t.Errorf("expected no error, got %v", err)
 	}
 
-	pos := sdk.Position{}
+	pos := opencdc.Position{}
 	err = src.Open(ctx, pos)
 	if err == nil {
 		t.Log("we should get error in read")
@@ -178,7 +178,7 @@ func TestNewSource(_ *testing.T) {
 
 func TestAck(t *testing.T) {
 	s := NewSource()
-	err := s.Ack(context.TODO(), sdk.Position{})
+	err := s.Ack(context.TODO(), opencdc.Position{})
 	if err != nil {
 		t.Errorf("Got err: %v", err)
 	}

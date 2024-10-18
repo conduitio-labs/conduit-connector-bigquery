@@ -28,6 +28,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/conduitio-labs/conduit-connector-bigquery/config"
 	"github.com/conduitio-labs/conduit-connector-bigquery/googlesource"
+	"github.com/conduitio/conduit-commons/opencdc"
 	sdk "github.com/conduitio/conduit-connector-sdk"
 	"github.com/matryer/is"
 	"go.uber.org/goleak"
@@ -107,7 +108,7 @@ type AcceptanceTestDriver struct {
 	sdk.ConfigurableAcceptanceTestDriver
 }
 
-func (d AcceptanceTestDriver) GenerateRecord(t *testing.T, op sdk.Operation) sdk.Record {
+func (d AcceptanceTestDriver) GenerateRecord(t *testing.T, op opencdc.Operation) opencdc.Record {
 	record := d.ConfigurableAcceptanceTestDriver.GenerateRecord(t, op)
 
 	record.Metadata = nil
@@ -116,7 +117,7 @@ func (d AcceptanceTestDriver) GenerateRecord(t *testing.T, op sdk.Operation) sdk
 }
 
 // WriteToSource writes data for source to pull data from.
-func (d AcceptanceTestDriver) WriteToSource(t *testing.T, records []sdk.Record) []sdk.Record {
+func (d AcceptanceTestDriver) WriteToSource(t *testing.T, records []opencdc.Record) []opencdc.Record {
 	var err error
 	is := is.New(t)
 	config := d.ConfigurableAcceptanceTestDriver.SourceConfig(t)
@@ -126,7 +127,7 @@ func (d AcceptanceTestDriver) WriteToSource(t *testing.T, records []sdk.Record) 
 	return records
 }
 
-func writeToSource(t *testing.T, config map[string]string, records []sdk.Record) (result []sdk.Record, err error) {
+func writeToSource(t *testing.T, config map[string]string, records []opencdc.Record) (result []opencdc.Record, err error) {
 	result, err = dataSetupWithRecord(t, config, records)
 	return result, err
 }
@@ -172,7 +173,7 @@ func createTableForAcceptance(_ *testing.T, client *bigquery.Client, tableID str
 }
 
 // dataSetupWithRecord Initial setup required - project with service account.
-func dataSetupWithRecord(t *testing.T, cfg map[string]string, record []sdk.Record) (result []sdk.Record, err error) {
+func dataSetupWithRecord(t *testing.T, cfg map[string]string, record []opencdc.Record) (result []opencdc.Record, err error) {
 	ctx := context.Background()
 	tableID := cfg[config.KeyTableID]
 
@@ -192,7 +193,7 @@ func dataSetupWithRecord(t *testing.T, cfg map[string]string, record []sdk.Recor
 
 		query = "INSERT INTO `" + projectID + "." + datasetID + "." + tableID + "`  values ('" + name + "' , '" + createdAtBQFormat + "')"
 
-		data := make(sdk.StructuredData)
+		data := make(opencdc.StructuredData)
 		data["name"] = name
 		data["created_at"] = createdAtBQFormat
 
@@ -212,7 +213,7 @@ func dataSetupWithRecord(t *testing.T, cfg map[string]string, record []sdk.Recor
 		}
 
 		newRecord := sdk.Util.Source.NewRecordCreate(
-			positionRecord, nil, sdk.RawData(byteKey), data,
+			positionRecord, nil, opencdc.RawData(byteKey), data,
 		)
 		newRecord.Metadata = nil
 

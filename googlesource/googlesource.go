@@ -27,6 +27,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/conduitio-labs/conduit-connector-bigquery/config"
+	"github.com/conduitio/conduit-commons/opencdc"
 	sdk "github.com/conduitio/conduit-connector-sdk"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -170,7 +171,7 @@ func (s *Source) ReadGoogleRow(ctx context.Context) (err error) {
 				return err
 			}
 
-			data := make(sdk.StructuredData)
+			data := make(opencdc.StructuredData)
 			var key string
 
 			for i, r := range row {
@@ -224,10 +225,10 @@ func (s *Source) ReadGoogleRow(ctx context.Context) (err error) {
 				continue
 			}
 
-			metadata := make(sdk.Metadata)
+			metadata := make(opencdc.Metadata)
 			metadata.SetCreatedAt(time.Now().UTC())
 
-			record := sdk.Util.Source.NewRecordCreate(recPosition, metadata, sdk.RawData(byteKey), data)
+			record := sdk.Util.Source.NewRecordCreate(recPosition, metadata, opencdc.RawData(byteKey), data)
 
 			// select statement to make sure channel was not closed by teardown stage
 			if s.iteratorClosed {
@@ -242,7 +243,7 @@ func (s *Source) ReadGoogleRow(ctx context.Context) (err error) {
 
 // matchColumnName matches if the column name is equal to the user defined primary key column.
 // if it is so assign this column name data to key for the record.
-func matchColumnName(dataName, columnName string, data sdk.StructuredData) (key string) {
+func matchColumnName(dataName, columnName string, data opencdc.StructuredData) (key string) {
 	if dataName == columnName {
 		key = fmt.Sprintf("%v", data[dataName])
 	}
@@ -332,21 +333,21 @@ func (s *Source) getRowIterator(ctx context.Context, offset string, tableID stri
 }
 
 // Next returns the next record from the buffer.
-func (s *Source) Next(ctx context.Context) (sdk.Record, error) {
+func (s *Source) Next(ctx context.Context) (opencdc.Record, error) {
 	select {
 	case <-s.tomb.Dead():
-		return sdk.Record{}, s.tomb.Err()
+		return opencdc.Record{}, s.tomb.Err()
 	case r := <-s.records:
 		return r, nil
 	case <-ctx.Done():
-		return sdk.Record{}, ctx.Err()
+		return opencdc.Record{}, ctx.Err()
 	default:
-		return sdk.Record{}, sdk.ErrBackoffRetry
+		return opencdc.Record{}, sdk.ErrBackoffRetry
 	}
 }
 
 // fetchPos unmarshal position.
-func fetchPos(ctx context.Context, s *Source, pos sdk.Position) {
+func fetchPos(ctx context.Context, s *Source, pos opencdc.Position) {
 	s.position.lock = new(sync.Mutex)
 	s.position.lock.Lock()
 	defer s.position.lock.Unlock()
