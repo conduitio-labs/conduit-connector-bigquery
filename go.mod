@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/bigquery v1.65.0
 	github.com/conduitio/conduit-commons v0.5.1
 	github.com/conduitio/conduit-connector-sdk v0.12.0
-	github.com/golangci/golangci-lint v1.64.7
+	github.com/golangci/golangci-lint v1.64.8
 	github.com/matryer/is v1.4.1
 	go.uber.org/goleak v1.3.0
 	google.golang.org/api v0.226.0
