@@ -120,7 +120,7 @@ func (d AcceptanceTestDriver) GenerateRecord(t *testing.T, op opencdc.Operation)
 func (d AcceptanceTestDriver) WriteToSource(t *testing.T, records []opencdc.Record) []opencdc.Record {
 	var err error
 	is := is.New(t)
-	config := d.ConfigurableAcceptanceTestDriver.SourceConfig(t)
+	config := d.ConfigurableAcceptanceTestDriver.SourceConfig(t) //nolint:staticcheck // we want to be explicit
 	records, err = writeToSource(t, config, records)
 	is.NoErr(err)
 
