@@ -1,6 +1,7 @@
 module github.com/conduitio-labs/conduit-connector-bigquery
 
 go 1.24.2
+
 require (
 	cloud.google.com/go/bigquery v1.67.0
 	github.com/conduitio/conduit-commons v0.5.2
